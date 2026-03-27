@@ -13,9 +13,15 @@
       margin: 0;
       padding: 0;
       color: white;
+      overflow-x: hidden;
     }
     .card {
       transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: flyIn 0.6s ease forwards;
+    }
+    @keyframes flyIn {
+      0% { opacity: 0; transform: translateY(80px) scale(0.8) rotate(-15deg); }
+      100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
     }
     .card:hover {
       transform: scale(1.12) rotate(3deg);
@@ -26,7 +32,31 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    /* 優化後的錯誤訊息樣式 */
+    /* 包包動畫 */
+    #pack {
+      transition: all 0.3s;
+    }
+    #pack.animating {
+      animation: packShake 0.8s ease-in-out 2;
+    }
+    @keyframes packShake {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-8deg) scale(1.1); }
+      75% { transform: rotate(8deg) scale(1.1); }
+    }
+    /* 開包粒子 */
+    .sparkle {
+      position: absolute;
+      font-size: 24px;
+      animation: sparkleAnim 1.2s ease forwards;
+      pointer-events: none;
+      z-index: 50;
+    }
+    @keyframes sparkleAnim {
+      0% { transform: scale(0.5) rotate(0deg); opacity: 1; }
+      100% { transform: scale(1.8) rotate(720deg); opacity: 0; top: -150px; }
+    }
+    /* 錯誤訊息 */
     .error-box {
       background: linear-gradient(135deg, #fefce8, #fef3c7);
       color: #854d0e;
@@ -44,13 +74,13 @@
       <h1 class="text-6xl font-bold mb-4 flex items-center justify-center gap-4">
         🎴 <span class="gradient-text">寶可夢抽卡模擬器</span>
       </h1>
-      <p class="text-xl text-yellow-200">使用 Pokémon TCG API • 每次隨機抽 5 張卡片</p>
+      <p class="text-xl text-yellow-200">點擊禮物包，享受開包動畫！</p>
     </div>
 
     <!-- 開包區 -->
-    <div id="pack" class="flex flex-col items-center justify-center my-16 cursor-pointer group">
+    <div id="pack" class="flex flex-col items-center justify-center my-16 cursor-pointer relative">
       <div class="relative">
-        <i class="fas fa-gift text-[180px] text-yellow-300 group-active:scale-95 transition-transform"></i>
+        <i id="giftIcon" class="fas fa-gift text-[180px] text-yellow-300"></i>
         <div class="absolute -top-6 -right-6 bg-red-500 text-white text-xs px-3 py-1 rounded-full font-bold rotate-12 shadow">5 張</div>
       </div>
       <p class="mt-6 text-3xl font-bold tracking-wide">點我開包！</p>
@@ -72,22 +102,50 @@
   </div>
 
   <script>
+    // 產生開包粒子特效
+    function createSparkles(count) {
+      const pack = document.getElementById('pack');
+      for (let i = 0; i < count; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+        sparkle.textContent = ['✨', '⭐', '💥'][Math.floor(Math.random() * 3)];
+        sparkle.style.left = Math.random() * 100 + '%';
+        sparkle.style.top = '40%';
+        sparkle.style.animationDelay = Math.random() * 400 + 'ms';
+        pack.appendChild(sparkle);
+        
+        // 自動移除
+        setTimeout(() => sparkle.remove(), 2000);
+      }
+    }
+
     async function drawCards() {
       const container = document.getElementById('cards');
+      const pack = document.getElementById('pack');
+      const giftIcon = document.getElementById('giftIcon');
+
+      // 1. 開始開包動畫
+      pack.classList.add('animating');
+      createSparkles(25); // 粒子特效
+
+      // 短暫延遲後隱藏包包
+      setTimeout(() => {
+        pack.style.opacity = '0';
+        pack.style.pointerEvents = 'none';
+      }, 800);
+
       container.innerHTML = `
         <div class="col-span-full text-center py-20">
           <i class="fas fa-spinner fa-spin text-5xl text-yellow-300"></i>
-          <p class="mt-6 text-xl">正在開包中...</p>
+          <p class="mt-6 text-xl">開包中...</p>
         </div>`;
 
       try {
         const res = await fetch('https://api.pokemontcg.io/v2/cards?q=supertype:Pokémon&orderBy=name&pageSize=50');
-        
         if (!res.ok) throw new Error(`HTTP 錯誤: ${res.status}`);
 
         const data = await res.json();
         const allCards = data.data || [];
-
         if (allCards.length === 0) throw new Error('沒有找到卡片資料');
 
         const selected = [];
@@ -98,33 +156,44 @@
 
         container.innerHTML = '';
 
-        selected.forEach(card => {
-          const div = document.createElement('div');
-          div.className = 'card bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/30 shadow-xl';
-          div.innerHTML = `
-            <div class="relative">
-              <img src="${card.images.large || card.images.small}" 
-                   class="w-full aspect-[3/4] object-cover" 
-                   alt="${card.name}"
-                   onerror="this.src='https://via.placeholder.com/400x560/334155/ffffff?text=卡片載入失敗'">
-              ${card.rarity ? `<div class="absolute top-3 right-3 bg-black/70 text-yellow-300 text-xs px-3 py-1 rounded-full">${card.rarity}</div>` : ''}
-            </div>
-            <div class="p-5 text-center">
-              <p class="font-bold text-lg leading-tight">${card.name}</p>
-              ${card.set ? `<p class="text-xs text-white/60 mt-1">${card.set.name}</p>` : ''}
-            </div>
-          `;
-          container.appendChild(div);
+        // 逐張卡片飛出（加上延遲）
+        selected.forEach((card, index) => {
+          setTimeout(() => {
+            const div = document.createElement('div');
+            div.className = 'card bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/30 shadow-xl';
+            div.style.animationDelay = (index * 120) + 'ms';
+            div.innerHTML = `
+              <div class="relative">
+                <img src="${card.images.large || card.images.small}" 
+                     class="w-full aspect-[3/4] object-cover" 
+                     alt="${card.name}"
+                     onerror="this.src='https://via.placeholder.com/400x560/334155/ffffff?text=卡片載入失敗'">
+                ${card.rarity ? `<div class="absolute top-3 right-3 bg-black/70 text-yellow-300 text-xs px-3 py-1 rounded-full">${card.rarity}</div>` : ''}
+              </div>
+              <div class="p-5 text-center">
+                <p class="font-bold text-lg leading-tight">${card.name}</p>
+                ${card.set ? `<p class="text-xs text-white/60 mt-1">${card.set.name}</p>` : ''}
+              </div>
+            `;
+            container.appendChild(div);
+          }, index * 120);
         });
+
+        // 動畫結束後恢復包包（下次可繼續點）
+        setTimeout(() => {
+          pack.style.transition = 'all 0.6s';
+          pack.style.opacity = '1';
+          pack.style.pointerEvents = 'auto';
+          pack.classList.remove('animating');
+        }, 1800);
+
       } catch (err) {
-        // 【優化後的錯誤訊息】
         container.innerHTML = `
           <div class="col-span-full">
             <div class="error-box mx-auto max-w-md">
               <i class="fas fa-exclamation-triangle text-6xl mb-4 text-amber-500"></i>
               <h3 class="text-2xl font-bold mb-2">哎呀～</h3>
               <p class="text-lg mb-4">寶可夢們正在休息中！</p>
-              <p class="text-base mb-6">API 暫時無法連線，請稍後再試～</p>
               <button onclick="drawCards()" 
                       class="px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold text-lg rounded-2xl shadow-inner flex items-center gap-3 mx-auto">
                 <i class="fas fa-redo"></i>
@@ -133,6 +202,11 @@
               <p class="text-xs text-amber-700 mt-6">${err.message}</p>
             </div>
           </div>`;
+        // 恢復包包
+        setTimeout(() => {
+          pack.style.opacity = '1';
+          pack.style.pointerEvents = 'auto';
+        }, 800);
         console.error('抽卡錯誤:', err);
       }
     }
@@ -142,7 +216,7 @@
       document.getElementById('drawBtn').addEventListener('click', drawCards);
       document.getElementById('pack').addEventListener('click', drawCards);
       
-      // 第一次進入頁面自動抽一次
+      // 第一次進入自動抽一次（帶動畫）
       drawCards();
     });
   </script>
