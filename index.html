@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>寶可夢抽卡模擬器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-b from-blue-900 to-purple-900 min-h-screen text-white">
+  <div class="max-w-4xl mx-auto p-8">
+    <h1 class="text-5xl font-bold text-center mb-8">🎴 寶可夢抽卡模擬器</h1>
+    
+    <div id="pack" class="flex justify-center mb-12 cursor-pointer">
+      <div class="text-center">
+        <i class="fas fa-gift text-9xl mb-4 animate-bounce"></i>
+        <p class="text-2xl">點我開包！（5 張）</p>
+      </div>
+    </div>
+
+    <div id="cards" class="grid grid-cols-5 gap-4"></div>
+
+    <button onclick="drawCards()" 
+            class="mt-8 mx-auto block px-10 py-4 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-xl rounded-2xl shadow-lg">
+      再抽一次！
+    </button>
+  </div>
+
+  <script>
+    // TCGdex API 隨機抽卡（可換成指定系列）
+    async function drawCards() {
+      document.getElementById('cards').innerHTML = '';
+      const num = 5;
+      
+      for(let i = 0; i < num; i++) {
+        // 隨機抽一張卡（可改成指定 set）
+        const res = await fetch('https://api.tcgdex.dev/v2/en/cards?random=true&limit=1');
+        const [card] = await res.json();
+        
+        const div = document.createElement('div');
+        div.className = 'bg-white/10 rounded-2xl overflow-hidden shadow-2xl transition hover:scale-105';
+        div.innerHTML = `
+          <img src="${card.image}" class="w-full" alt="${card.name}">
+          <div class="p-3 text-center">
+            <p class="font-bold">${card.name}</p>
+            <p class="text-yellow-400">${card.rarity || 'Common'}</p>
+          </div>
+        `;
+        document.getElementById('cards').appendChild(div);
+      }
+    }
+
+    // 點包包也能抽
+    document.getElementById('pack').addEventListener('click', drawCards);
+  </script>
+</body>
+</html>
