@@ -15,6 +15,8 @@
       color: white;
       overflow-x: hidden;
     }
+    .tab-btn { transition: all 0.3s; }
+    .tab-btn.active { background-color: #facc15; color: #854d0e; font-weight: bold; }
     .card {
       transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       animation: flyIn 0.6s ease forwards;
@@ -23,28 +25,26 @@
       0% { opacity: 0; transform: translateY(80px) scale(0.8) rotate(-15deg); }
       100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
     }
-    .card:hover {
-      transform: scale(1.12) rotate(3deg);
-      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+    .card:hover { transform: scale(1.08) rotate(3deg); }
+    .special-card {
+      box-shadow: 0 0 20px #facc15, 0 0 40px #fbbf24, 0 0 60px #f59e0b;
+      animation: goldPulse 1.5s infinite alternate;
     }
+    .special-card .card-name { animation: bounce 0.6s infinite alternate; }
+    @keyframes goldPulse { from { filter: brightness(1); } to { filter: brightness(1.3); } }
+    @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-4px); } }
     .gradient-text {
       background: linear-gradient(to right, #facc15, #eab308);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    /* 包包動畫 */
-    #pack {
-      transition: all 0.3s;
-    }
-    #pack.animating {
-      animation: packShake 0.8s ease-in-out 2;
-    }
+    #pack { transition: all 0.3s; }
+    #pack.animating { animation: packShake 0.8s ease-in-out 2; }
     @keyframes packShake {
       0%, 100% { transform: rotate(0deg); }
       25% { transform: rotate(-8deg) scale(1.1); }
       75% { transform: rotate(8deg) scale(1.1); }
     }
-    /* 開包粒子 */
     .sparkle {
       position: absolute;
       font-size: 24px;
@@ -56,7 +56,12 @@
       0% { transform: scale(0.5) rotate(0deg); opacity: 1; }
       100% { transform: scale(1.8) rotate(720deg); opacity: 0; top: -150px; }
     }
-    /* 錯誤訊息 */
+    /* 手機優化 */
+    @media (max-width: 640px) {
+      .card img { aspect-ratio: 3/4; }
+      #cards { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
+      .text-6xl { font-size: 2.5rem; }
+    }
     .error-box {
       background: linear-gradient(135deg, #fefce8, #fef3c7);
       color: #854d0e;
@@ -69,40 +74,92 @@
   </style>
 </head>
 <body>
-  <div class="max-w-6xl mx-auto p-8">
-    <div class="text-center mb-12">
-      <h1 class="text-6xl font-bold mb-4 flex items-center justify-center gap-4">
-        🎴 <span class="gradient-text">寶可夢抽卡模擬器</span>
-      </h1>
-      <p class="text-xl text-yellow-200">點擊禮物包，享受開包動畫！</p>
+  <div class="max-w-6xl mx-auto p-6">
+    <!-- 分頁 -->
+    <div class="flex justify-center mb-8 bg-white/10 backdrop-blur-md rounded-3xl p-1 shadow-inner">
+      <button onclick="switchTab(0)" id="tab0" class="tab-btn active flex-1 py-4 rounded-3xl text-xl">🎴 抽卡模式</button>
+      <button onclick="switchTab(1)" id="tab1" class="tab-btn flex-1 py-4 rounded-3xl text-xl">❤️ 我的收藏</button>
     </div>
 
-    <!-- 開包區 -->
-    <div id="pack" class="flex flex-col items-center justify-center my-16 cursor-pointer relative">
-      <div class="relative">
-        <i id="giftIcon" class="fas fa-gift text-[180px] text-yellow-300"></i>
-        <div class="absolute -top-6 -right-6 bg-red-500 text-white text-xs px-3 py-1 rounded-full font-bold rotate-12 shadow">5 張</div>
+    <!-- 抽卡模式 -->
+    <div id="drawTab">
+      <div class="text-center mb-8">
+        <h1 class="text-6xl font-bold mb-2 flex items-center justify-center gap-4">
+          🎴 <span class="gradient-text">寶可夢抽卡模擬器</span>
+        </h1>
+        <p class="text-xl text-yellow-200">享受開包音效 + 金光特效！</p>
       </div>
-      <p class="mt-6 text-3xl font-bold tracking-wide">點我開包！</p>
+
+      <!-- 抽卡數切換 -->
+      <div class="flex justify-center gap-3 mb-8">
+        <button onclick="setNumCards(5)" class="num-btn px-6 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition" id="num5">5張</button>
+        <button onclick="setNumCards(10)" class="num-btn px-6 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition active" id="num10">10張</button>
+        <button onclick="setNumCards(15)" class="num-btn px-6 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition" id="num15">15張</button>
+      </div>
+
+      <!-- 開包區 -->
+      <div id="pack" class="flex flex-col items-center justify-center my-12 cursor-pointer relative mx-auto max-w-[220px]">
+        <div class="relative">
+          <i id="giftIcon" class="fas fa-gift text-[180px] text-yellow-300"></i>
+          <div class="absolute -top-6 -right-6 bg-red-500 text-white text-xs px-4 py-1 rounded-full font-bold rotate-12 shadow">10張</div>
+        </div>
+        <p class="mt-6 text-3xl font-bold tracking-wide">點我開包！</p>
+      </div>
+
+      <!-- 卡片區 -->
+      <div id="cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 min-h-[400px]"></div>
+
+      <div class="flex justify-center mt-12">
+        <button onclick="drawCards()" 
+                class="px-14 py-6 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-black font-bold text-2xl rounded-3xl shadow-2xl flex items-center gap-4 active:scale-95 transition-all">
+          <i class="fas fa-dice"></i>
+          再抽一次！
+        </button>
+      </div>
     </div>
 
-    <!-- 卡片區 -->
-    <div id="cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 min-h-[400px]"></div>
-
-    <!-- 再抽按鈕 -->
-    <div class="flex justify-center mt-16">
-      <button id="drawBtn"
-              class="px-14 py-6 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-black font-bold text-2xl rounded-3xl shadow-2xl flex items-center gap-4 active:scale-95 transition-all">
-        <i class="fas fa-dice"></i>
-        再抽一次！
-      </button>
+    <!-- 我的收藏 -->
+    <div id="collectionTab" class="hidden">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-4xl font-bold">❤️ 我的收藏</h2>
+        <button onclick="clearCollection()" class="px-6 py-3 bg-red-500/80 hover:bg-red-600 rounded-2xl text-sm font-bold flex items-center gap-2">
+          <i class="fas fa-trash"></i> 清空收藏
+        </button>
+      </div>
+      <div id="collectionGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 min-h-[400px]"></div>
+      <p id="emptyMsg" class="text-center text-white/60 mt-12 hidden">還沒有收藏任何卡片～快去抽卡吧！</p>
     </div>
 
     <p class="text-center text-sm text-white/60 mt-12">資料來自 Pokémon TCG API • 純娛樂用途</p>
   </div>
 
   <script>
-    // 產生開包粒子特效
+    let numCards = 10;
+    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playWhoosh() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.6);
+      gain.gain.value = 0.6;
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1);
+    }
+
+    function playDing() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+      gain.gain.value = 0.5;
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    }
+
     function createSparkles(count) {
       const pack = document.getElementById('pack');
       for (let i = 0; i < count; i++) {
@@ -113,111 +170,146 @@
         sparkle.style.top = '40%';
         sparkle.style.animationDelay = Math.random() * 400 + 'ms';
         pack.appendChild(sparkle);
-        
-        // 自動移除
         setTimeout(() => sparkle.remove(), 2000);
       }
+    }
+
+    function isSpecialRarity(rarity) {
+      return rarity && /ultra|secret|illustration|hyper|special|god|legend/i.test(rarity);
     }
 
     async function drawCards() {
       const container = document.getElementById('cards');
       const pack = document.getElementById('pack');
-      const giftIcon = document.getElementById('giftIcon');
-
-      // 1. 開始開包動畫
+      playWhoosh();
       pack.classList.add('animating');
-      createSparkles(25); // 粒子特效
+      createSparkles(30);
 
-      // 短暫延遲後隱藏包包
-      setTimeout(() => {
-        pack.style.opacity = '0';
-        pack.style.pointerEvents = 'none';
-      }, 800);
+      setTimeout(() => { pack.style.opacity = '0'; pack.style.pointerEvents = 'none'; }, 800);
 
-      container.innerHTML = `
-        <div class="col-span-full text-center py-20">
-          <i class="fas fa-spinner fa-spin text-5xl text-yellow-300"></i>
-          <p class="mt-6 text-xl">開包中...</p>
-        </div>`;
+      container.innerHTML = `<div class="col-span-full text-center py-20"><i class="fas fa-spinner fa-spin text-5xl text-yellow-300"></i><p class="mt-6 text-xl">開包中...</p></div>`;
 
       try {
         const res = await fetch('https://api.pokemontcg.io/v2/cards?q=supertype:Pokémon&orderBy=name&pageSize=50');
         if (!res.ok) throw new Error(`HTTP 錯誤: ${res.status}`);
-
         const data = await res.json();
         const allCards = data.data || [];
         if (allCards.length === 0) throw new Error('沒有找到卡片資料');
 
         const selected = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < numCards; i++) {
           const randomIndex = Math.floor(Math.random() * allCards.length);
           selected.push(allCards[randomIndex]);
         }
 
         container.innerHTML = '';
 
-        // 逐張卡片飛出（加上延遲）
         selected.forEach((card, index) => {
           setTimeout(() => {
+            playDing();
             const div = document.createElement('div');
-            div.className = 'card bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/30 shadow-xl';
-            div.style.animationDelay = (index * 120) + 'ms';
+            div.className = `card bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/30 shadow-xl relative ${isSpecialRarity(card.rarity) ? 'special-card' : ''}`;
             div.innerHTML = `
               <div class="relative">
-                <img src="${card.images.large || card.images.small}" 
-                     class="w-full aspect-[3/4] object-cover" 
-                     alt="${card.name}"
-                     onerror="this.src='https://via.placeholder.com/400x560/334155/ffffff?text=卡片載入失敗'">
+                <img src="${card.images.large || card.images.small}" class="w-full aspect-[3/4] object-cover" alt="${card.name}">
                 ${card.rarity ? `<div class="absolute top-3 right-3 bg-black/70 text-yellow-300 text-xs px-3 py-1 rounded-full">${card.rarity}</div>` : ''}
               </div>
               <div class="p-5 text-center">
-                <p class="font-bold text-lg leading-tight">${card.name}</p>
+                <p class="font-bold text-lg leading-tight card-name">${card.name}</p>
                 ${card.set ? `<p class="text-xs text-white/60 mt-1">${card.set.name}</p>` : ''}
+                <button onclick="toggleCollect(this, ${JSON.stringify(card)})" class="mt-4 text-2xl hover:scale-125 transition">❤️</button>
               </div>
             `;
             container.appendChild(div);
-          }, index * 120);
+          }, index * 80);
         });
 
-        // 動畫結束後恢復包包（下次可繼續點）
         setTimeout(() => {
           pack.style.transition = 'all 0.6s';
           pack.style.opacity = '1';
           pack.style.pointerEvents = 'auto';
           pack.classList.remove('animating');
-        }, 1800);
+        }, 2000);
 
       } catch (err) {
-        container.innerHTML = `
-          <div class="col-span-full">
-            <div class="error-box mx-auto max-w-md">
-              <i class="fas fa-exclamation-triangle text-6xl mb-4 text-amber-500"></i>
-              <h3 class="text-2xl font-bold mb-2">哎呀～</h3>
-              <p class="text-lg mb-4">寶可夢們正在休息中！</p>
-              <button onclick="drawCards()" 
-                      class="px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold text-lg rounded-2xl shadow-inner flex items-center gap-3 mx-auto">
-                <i class="fas fa-redo"></i>
-                再試一次！
-              </button>
-              <p class="text-xs text-amber-700 mt-6">${err.message}</p>
-            </div>
-          </div>`;
-        // 恢復包包
-        setTimeout(() => {
-          pack.style.opacity = '1';
-          pack.style.pointerEvents = 'auto';
-        }, 800);
-        console.error('抽卡錯誤:', err);
+        container.innerHTML = `<div class="col-span-full"><div class="error-box mx-auto max-w-md"><i class="fas fa-exclamation-triangle text-6xl mb-4 text-amber-500"></i><h3 class="text-2xl font-bold mb-2">哎呀～</h3><p class="text-lg mb-4">寶可夢們正在休息中！</p><button onclick="drawCards()" class="px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold text-lg rounded-2xl shadow-inner flex items-center gap-3 mx-auto"><i class="fas fa-redo"></i>再試一次！</button></div></div>`;
+        setTimeout(() => { pack.style.opacity = '1'; pack.style.pointerEvents = 'auto'; }, 800);
       }
     }
 
-    // 頁面載入後綁定事件 + 第一次自動抽卡
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('drawBtn').addEventListener('click', drawCards);
+    function toggleCollect(btn, card) {
+      let collection = JSON.parse(localStorage.getItem('pokemonCollected')) || [];
+      const exists = collection.findIndex(c => c.id === card.id);
+      if (exists > -1) {
+        collection.splice(exists, 1);
+        btn.textContent = '♡';
+      } else {
+        collection.push(card);
+        btn.textContent = '❤️';
+      }
+      localStorage.setItem('pokemonCollected', JSON.stringify(collection));
+      if (!document.getElementById('collectionTab').classList.contains('hidden')) loadCollection();
+    }
+
+    function loadCollection() {
+      const grid = document.getElementById('collectionGrid');
+      const empty = document.getElementById('emptyMsg');
+      let collection = JSON.parse(localStorage.getItem('pokemonCollected')) || [];
+      grid.innerHTML = '';
+      if (collection.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      collection.forEach(card => {
+        const div = document.createElement('div');
+        div.className = `card bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden border border-white/30 shadow-xl ${isSpecialRarity(card.rarity) ? 'special-card' : ''}`;
+        div.innerHTML = `
+          <div class="relative">
+            <img src="${card.images.large || card.images.small}" class="w-full aspect-[3/4] object-cover" alt="${card.name}">
+            ${card.rarity ? `<div class="absolute top-3 right-3 bg-black/70 text-yellow-300 text-xs px-3 py-1 rounded-full">${card.rarity}</div>` : ''}
+          </div>
+          <div class="p-5 text-center">
+            <p class="font-bold text-lg leading-tight">${card.name}</p>
+            <button onclick="removeFromCollection('${card.id}', this)" class="mt-4 text-red-400 hover:text-red-500 text-xl">🗑️</button>
+          </div>
+        `;
+        grid.appendChild(div);
+      });
+    }
+
+    function removeFromCollection(id, el) {
+      let collection = JSON.parse(localStorage.getItem('pokemonCollected')) || [];
+      collection = collection.filter(c => c.id !== id);
+      localStorage.setItem('pokemonCollected', JSON.stringify(collection));
+      el.closest('.card').remove();
+      if (collection.length === 0) document.getElementById('emptyMsg').classList.remove('hidden');
+    }
+
+    function clearCollection() {
+      if (confirm('確定要清空所有收藏嗎？')) {
+        localStorage.removeItem('pokemonCollected');
+        loadCollection();
+      }
+    }
+
+    function setNumCards(n) {
+      numCards = n;
+      document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('num' + n).classList.add('active');
+    }
+
+    function switchTab(tab) {
+      document.getElementById('drawTab').classList.toggle('hidden', tab === 1);
+      document.getElementById('collectionTab').classList.toggle('hidden', tab === 0);
+      document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === tab));
+      if (tab === 1) loadCollection();
+    }
+
+    // 啟動
+    document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('pack').addEventListener('click', drawCards);
-      
-      // 第一次進入自動抽一次（帶動畫）
-      drawCards();
+      drawCards(); // 第一次自動抽
     });
   </script>
 </body>
