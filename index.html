@@ -56,7 +56,6 @@
       0% { transform: scale(0.5) rotate(0deg); opacity: 1; }
       100% { transform: scale(1.8) rotate(720deg); opacity: 0; top: -150px; }
     }
-    /* 手機優化 */
     @media (max-width: 640px) {
       .card img { aspect-ratio: 3/4; }
       #cards { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
@@ -75,29 +74,25 @@
 </head>
 <body>
   <div class="max-w-6xl mx-auto p-6">
-    <!-- 分頁 -->
     <div class="flex justify-center mb-8 bg-white/10 backdrop-blur-md rounded-3xl p-1 shadow-inner">
       <button onclick="switchTab(0)" id="tab0" class="tab-btn active flex-1 py-4 rounded-3xl text-xl">🎴 抽卡模式</button>
       <button onclick="switchTab(1)" id="tab1" class="tab-btn flex-1 py-4 rounded-3xl text-xl">❤️ 我的收藏</button>
     </div>
 
-    <!-- 抽卡模式 -->
     <div id="drawTab">
       <div class="text-center mb-8">
         <h1 class="text-6xl font-bold mb-2 flex items-center justify-center gap-4">
           🎴 <span class="gradient-text">寶可夢抽卡模擬器</span>
         </h1>
-        <p class="text-xl text-yellow-200">享受開包音效 + 金光特效！</p>
+        <p class="text-xl text-yellow-200">10張 + 金光 + 音效 + 收藏系統</p>
       </div>
 
-      <!-- 抽卡數切換 -->
       <div class="flex justify-center gap-3 mb-8">
         <button onclick="setNumCards(5)" class="num-btn px-6 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition" id="num5">5張</button>
         <button onclick="setNumCards(10)" class="num-btn px-6 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition active" id="num10">10張</button>
         <button onclick="setNumCards(15)" class="num-btn px-6 py-2 rounded-2xl bg-white/20 hover:bg-white/30 transition" id="num15">15張</button>
       </div>
 
-      <!-- 開包區 -->
       <div id="pack" class="flex flex-col items-center justify-center my-12 cursor-pointer relative mx-auto max-w-[220px]">
         <div class="relative">
           <i id="giftIcon" class="fas fa-gift text-[180px] text-yellow-300"></i>
@@ -106,7 +101,6 @@
         <p class="mt-6 text-3xl font-bold tracking-wide">點我開包！</p>
       </div>
 
-      <!-- 卡片區 -->
       <div id="cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 min-h-[400px]"></div>
 
       <div class="flex justify-center mt-12">
@@ -118,7 +112,6 @@
       </div>
     </div>
 
-    <!-- 我的收藏 -->
     <div id="collectionTab" class="hidden">
       <div class="flex justify-between items-center mb-8">
         <h2 class="text-4xl font-bold">❤️ 我的收藏</h2>
@@ -306,10 +299,9 @@
       if (tab === 1) loadCollection();
     }
 
-    // 啟動
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('pack').addEventListener('click', drawCards);
-      drawCards(); // 第一次自動抽
+      drawCards();
     });
   </script>
 </body>
