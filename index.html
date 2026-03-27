@@ -5,52 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>寶可夢抽卡模擬器</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { background: linear-gradient(to bottom, #1e3a8a, #4c1d95); }
+    .card { transition: all 0.3s; }
+    .card:hover { transform: scale(1.08) rotate(2deg); }
+  </style>
 </head>
-<body class="bg-gradient-to-b from-blue-900 to-purple-900 min-h-screen text-white">
-  <div class="max-w-4xl mx-auto p-8">
-    <h1 class="text-5xl font-bold text-center mb-8">🎴 寶可夢抽卡模擬器</h1>
-    
-    <div id="pack" class="flex justify-center mb-12 cursor-pointer">
-      <div class="text-center">
-        <i class="fas fa-gift text-9xl mb-4 animate-bounce"></i>
-        <p class="text-2xl">點我開包！（5 張）</p>
-      </div>
+<body class="min-h-screen text-white">
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-6xl font-bold text-center mb-8 flex items-center justify-center gap-4">
+      🎴 寶可夢抽卡模擬器
+    </h1>
+
+    <div id="pack" class="flex flex-col items-center justify-center my-12 cursor-pointer hover:scale-110 transition">
+      <i class="fas fa-gift text-9xl mb-6 text-yellow-300"></i>
+      <p class="text-3xl font-bold">點我開包！（抽 5 張）</p>
+      <p class="text-lg text-yellow-200 mt-2">使用 TCGdex 隨機抽卡</p>
     </div>
 
-    <div id="cards" class="grid grid-cols-5 gap-4"></div>
+    <div id="cards" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"></div>
 
-    <button onclick="drawCards()" 
-            class="mt-8 mx-auto block px-10 py-4 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-xl rounded-2xl shadow-lg">
-      再抽一次！
-    </button>
+    <div class="flex justify-center mt-12">
+      <button onclick="drawCards()" 
+              class="px-12 py-5 bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-2xl rounded-3xl shadow-xl flex items-center gap-3">
+        <i class="fas fa-redo"></i>
+        再抽一次！
+      </button>
+    </div>
   </div>
 
   <script>
-    // TCGdex API 隨機抽卡（可換成指定系列）
     async function drawCards() {
-      document.getElementById('cards').innerHTML = '';
-      const num = 5;
-      
-      for(let i = 0; i < num; i++) {
-        // 隨機抽一張卡（可改成指定 set）
-        const res = await fetch('https://api.tcgdex.dev/v2/en/cards?random=true&limit=1');
-        const [card] = await res.json();
-        
-        const div = document.createElement('div');
-        div.className = 'bg-white/10 rounded-2xl overflow-hidden shadow-2xl transition hover:scale-105';
-        div.innerHTML = `
-          <img src="${card.image}" class="w-full" alt="${card.name}">
-          <div class="p-3 text-center">
-            <p class="font-bold">${card.name}</p>
-            <p class="text-yellow-400">${card.rarity || 'Common'}</p>
-          </div>
-        `;
-        document.getElementById('cards').appendChild(div);
+      const cardsContainer = document.getElementById('cards');
+      cardsContainer.innerHTML = '<p class="col-span-full text-center text-xl">抽卡中，請稍等...</p>';
+
+      try {
+        // 抽 5 張卡片
+        const response = await fetch('https://api.tcgdex.dev/v2/en/cards?limit=5&random=true');
+        if (!response.ok) throw new Error('API 錯誤');
+        const cards = await response.json();
+
+        cardsContainer.innerHTML = '';
+
+        cards.forEach(card => {
+          const div = document.createElement('div');
+          div.className = 'card bg-white/10 backdrop-blur-md rounded-3xl overflow-hidden shadow-2xl border border-white/20';
+          div.innerHTML = `
+            <img src="${card.image}" class="w-full" alt="${card.name}" onerror="this.src='https://via.placeholder.com/300x420?text=卡片載入失敗'">
+            <div class="p-4 text-center">
+              <p class="font-bold text-lg">${card.name}</p>
+              <p class="text-yellow-300 text-sm">${card.rarity || '普通'}</p>
+            </div>
+          `;
+          cardsContainer.appendChild(div);
+        });
+      } catch (error) {
+        cardsContainer.innerHTML = `<p class="col-span-full text-center text-red-400">抽卡失敗，請稍後再試～<br>${error.message}</p>`;
       }
     }
 
-    // 點包包也能抽
+    // 點擊大包包也能抽卡
     document.getElementById('pack').addEventListener('click', drawCards);
   </script>
 </body>
